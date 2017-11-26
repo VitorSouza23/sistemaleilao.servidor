@@ -41,7 +41,11 @@ public class ClienteLeilaoController extends UnicastRemoteObject implements ICli
 
     @Override
     public boolean removerClienteDoServidor(Cliente cliente) throws RemoteException {
-        return this._gerenciadorClientes.remove(cliente);
+        if(this._gerenciadorClientes.remove(cliente)){
+            this._geradorId.deleteID(cliente.getId());
+            return true;
+        }
+        return false;
     }
 
 }
