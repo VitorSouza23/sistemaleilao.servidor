@@ -8,10 +8,15 @@ package rmiimplementacao;
 import exceptions.lance.ValorLanceInvalidoException;
 import helpers.geradorid.GeradorId;
 import helpers.gerenciadores.GerenciadorListaLances;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import lance.Lance;
+import multicast.AvisarNovoLancemaisAlto;
+import produto.Produto;
 import rmiinterfaces.lance.ILanceLeiaoController;
 
 /**
@@ -22,11 +27,13 @@ public class LanceLeilaoController extends UnicastRemoteObject implements ILance
     
     private final GerenciadorListaLances _gerneciadorListaLances;
     private final GeradorId _geradorId;
+    private final AvisarNovoLancemaisAlto _avisarNovolanceMaisAlto;
     
-    public LanceLeilaoController() throws RemoteException{
+    public LanceLeilaoController() throws RemoteException, IOException{
         super();
         this._gerneciadorListaLances = GerenciadorListaLances.getInstance();
         this._geradorId = GeradorId.getInstance();
+        this._avisarNovolanceMaisAlto = new AvisarNovoLancemaisAlto();
     }
 
     @Override
@@ -36,7 +43,12 @@ public class LanceLeilaoController extends UnicastRemoteObject implements ILance
         }
         lance.setId(this._geradorId.getNewID());
         this._gerneciadorListaLances.add(lance);
-        //Avisar a todos os cliente o valor no novo lance
+        
+        try {
+            this._avisarNovolanceMaisAlto.enviarAviso();
+        } catch (IOException ex) {
+            Logger.getLogger(LanceLeilaoController.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         return lance;
         
@@ -54,6 +66,16 @@ public class LanceLeilaoController extends UnicastRemoteObject implements ILance
     @Override
     public List<Lance> getAlllances() throws RemoteException {
         return this._gerneciadorListaLances.getAll();
+    }
+
+    @Override
+    public Lance getlanceComBaseEmUmProduto(Produto produto) throws RemoteException {
+        for(Lance lanceAux : this.getAlllances()){
+            if(lanceAux.getProduto().getId() == produto.getId()){
+                return lanceAux;
+            }
+        }
+        return null;
     }
     
 }
