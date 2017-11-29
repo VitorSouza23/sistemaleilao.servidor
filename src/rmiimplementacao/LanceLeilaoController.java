@@ -23,13 +23,13 @@ import rmiinterfaces.lance.ILanceLeiaoController;
  *
  * @author Vitor
  */
-public class LanceLeilaoController extends UnicastRemoteObject implements ILanceLeiaoController{
-    
+public class LanceLeilaoController extends UnicastRemoteObject implements ILanceLeiaoController {
+
     private final GerenciadorListaLances _gerneciadorListaLances;
     private final GeradorId _geradorId;
     private final AvisarNovoLancemaisAlto _avisarNovolanceMaisAlto;
-    
-    public LanceLeilaoController() throws RemoteException, IOException{
+
+    public LanceLeilaoController() throws RemoteException, IOException {
         super();
         this._gerneciadorListaLances = GerenciadorListaLances.getInstance();
         this._geradorId = GeradorId.getInstance();
@@ -38,25 +38,29 @@ public class LanceLeilaoController extends UnicastRemoteObject implements ILance
 
     @Override
     public Lance fazerUmLance(Lance lance) throws RemoteException, ValorLanceInvalidoException {
-        if(lance.getValor() < this._gerneciadorListaLances.getLanceMaisAltoProduto(lance.getProduto()).getValor()){
-            throw new ValorLanceInvalidoException("O valor do lance é menor que o valor de lance mais alto no momento!");
+        Lance lanceMaisAltoAtual = this._gerneciadorListaLances.getLanceMaisAltoProduto(lance.getProduto());
+        if (lanceMaisAltoAtual != null) {
+            if (lance.getValor() < this._gerneciadorListaLances.getLanceMaisAltoProduto(lance.getProduto()).getValor()) {
+                throw new ValorLanceInvalidoException("O valor do lance é menor que o valor de lance mais alto no momento!");
+            }
         }
+
         lance.setId(this._geradorId.getNewID());
         this._gerneciadorListaLances.add(lance);
-        
+
         try {
             this._avisarNovolanceMaisAlto.enviarAviso();
         } catch (IOException ex) {
             Logger.getLogger(LanceLeilaoController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
         return lance;
-        
+
     }
 
     @Override
     public boolean removerLance(Lance lance) throws RemoteException {
-        if(this._gerneciadorListaLances.remove(lance)){
+        if (this._gerneciadorListaLances.remove(lance)) {
             this._geradorId.deleteID(lance.getId());
             return true;
         }
@@ -70,12 +74,17 @@ public class LanceLeilaoController extends UnicastRemoteObject implements ILance
 
     @Override
     public Lance getlanceComBaseEmUmProduto(Produto produto) throws RemoteException {
-        for(Lance lanceAux : this.getAlllances()){
-            if(lanceAux.getProduto().getId() == produto.getId()){
-                return lanceAux;
+        double valorMaisalto = 0.0;
+        Lance lanceFinal = null;
+        for (Lance lanceAux : this.getAlllances()) {
+            if (lanceAux.getProduto().getId() == produto.getId()) {
+                if(valorMaisalto < lanceAux.getValor()){
+                    valorMaisalto = lanceAux.getValor();
+                    lanceFinal = lanceAux;
+                }
             }
         }
-        return null;
+        return lanceFinal;
     }
-    
+
 }
