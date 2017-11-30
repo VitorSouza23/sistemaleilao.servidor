@@ -8,6 +8,7 @@ package inicializadores;
 import helpers.gerenciadores.GerenciadorListaProdutos;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.List;
 import produto.Produto;
 import rmiimplementacao.LanceLeilaoController;
 import rmiimplementacao.ProdutoLeilaoController;
@@ -19,16 +20,17 @@ import rmiimplementacao.ProdutoLeilaoController;
 public class IncializadorListaProdutos {
     public static void inicializarListaDeProdutos() throws RemoteException, IOException{
         ProdutoLeilaoController produtoLeilaoController = new ProdutoLeilaoController();
-        
-        Produto produto = new Produto("Produto 1", "Descrição 1", 10, true);
-        produtoLeilaoController.adicionarProduto(produto);
-        produto = new Produto("Produto 2", "Descrição 2", 20, true);
-        produtoLeilaoController.adicionarProduto(produto);
-        produto = new Produto("Produto 3", "Descrição 3", 30, true);
-        produtoLeilaoController.adicionarProduto(produto);
-        produto = new Produto("Produto 4", "Descrição 4", 40, true);
-        produtoLeilaoController.adicionarProduto(produto);
-        produto = new Produto("Produto 5", "Descrição 5", 50, true);
-        produtoLeilaoController.adicionarProduto(produto);
+        List<inicializadores.webservice.Produto> webserviceList = obterTodosOsProdutos();
+        for(inicializadores.webservice.Produto webProduto : webserviceList){
+            Produto prodtoAux = new Produto(webProduto.getNome(), webProduto.getDescricao(), webProduto.getLanceInicial(), true);
+            produtoLeilaoController.adicionarProduto(prodtoAux);
+        }
+       
+    }
+
+    private static java.util.List<inicializadores.webservice.Produto> obterTodosOsProdutos() {
+        inicializadores.webservice.SistemaLeilaoWebService_Service service = new inicializadores.webservice.SistemaLeilaoWebService_Service();
+        inicializadores.webservice.SistemaLeilaoWebService port = service.getSistemaLeilaoWebServicePort();
+        return port.obterTodosOsProdutos();
     }
 }
